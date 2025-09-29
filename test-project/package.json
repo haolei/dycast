@@ -1,0 +1,26 @@
+{
+  "name": "dycast-test-project",
+  "version": "1.0.0",
+  "description": "Test project for DyCast Core library",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "http-server public -p 8080 -o"
+  },
+  "dependencies": {
+    "@dycast/core": "file:../dycast-core",
+    "http-server": "^14.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "dycast",
+    "douyin",
+    "live-streaming",
+    "test"
+  ],
+  "author": "DyCast Team",
+  "license": "MIT"
+}

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DyCast Core Test - 抖音弹幕测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .subtitle {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .input-group label {
+            min-width: 100px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(45deg, #fd79a8, #e84393);
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .status-item {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .messages {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .message.chat {
+            background: rgba(74, 185, 255, 0.2);
+            border-color: #4ab9ff;
+        }
+        .message.gift {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+        }
+        .message.like {
+            background: rgba(255, 193, 7, 0.2);
+            border-color: #ffc107;
+        }
+        .message.member {
+            background: rgba(40, 167, 69, 0.2);
+            border-color: #28a745;
+        }
+        .message.system {
+            background: rgba(108, 117, 125, 0.2);
+            border-color: #6c757d;
+        }
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            float: right;
+        }
+        .message-content {
+            margin-top: 5px;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .gift-name {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .gift-count {
+            color: #ffc107;
+        }
+        .scrollbar-hidden {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .scrollbar-hidden::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <!-- Load mssdk.js from the dycast-core library -->
+    <script src="http://localhost:3001/dylive/mssdk.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 DyCast Core Test</h1>
+        <p class="subtitle">抖音直播弹幕连接测试 - Douyin Live Stream Message Test</p>
+        
+        <div class="control-panel">
+            <div class="input-group">
+                <label>直播间:</label>
+                <input type="text" id="roomInput" placeholder="输入直播间号，如: 148108118778" value="148108118778">
+                <button id="connectBtn" class="btn-primary">连接</button>
+                <button id="disconnectBtn" class="btn-danger" disabled>断开</button>
+            </div>
+            <div class="input-group">
+                <label>代理地址:</label>
+                <input type="text" id="proxyInput" placeholder="代理服务器地址" value="http://localhost:3001">
+                <button id="testBtn" class="btn-secondary">测试连接</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="status-item">
+                <div>连接状态</div>
+                <div class="status-value" id="connectionStatus">未连接</div>
+            </div>
+            <div class="status-item">
+                <div>消息数量</div>
+                <div class="status-value" id="messageCount">0</div>
+            </div>
+            <div class="status-item">
+                <div>在线人数</div>
+                <div class="status-value" id="userCount">-</div>
+            </div>
+            <div class="status-item">
+                <div>运行时间</div>
+                <div class="status-value" id="uptime">00:00</div>
+            </div>
+        </div>
+
+        <div class="messages scrollbar-hidden" id="messageContainer">
+            <div class="message system">
+                <span class="message-time">等待连接...</span>
+                <div class="message-content">
+                    📡 准备连接到抖音直播间，请输入直播间号后点击连接按钮
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import DyCast from CDN or use global variable if available
+        // For this test, we'll simulate the connection using fetch API to our proxy
+        
+        class DyCastTest {
+            constructor() {
+                this.connected = false;
+                this.messageCount = 0;
+                this.startTime = null;
+                this.uptimeInterval = null;
+                this.dycast = null;
+                
+                this.initializeUI();
+            }
+
+            initializeUI() {
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+                const testBtn = document.getElementById('testBtn');
+                
+                connectBtn.addEventListener('click', () => this.connect());
+                disconnectBtn.addEventListener('click', () => this.disconnect());
+                testBtn.addEventListener('click', () => this.testProxy());
+            }
+
+            async testProxy() {
+                const proxyUrl = document.getElementById('proxyInput').value;
+                try {
+                    const response = await fetch(`${proxyUrl}/health`);
+                    const data = await response.json();
+                    
+                    this.addMessage('system', '🟢 代理服务器连接成功', JSON.stringify(data, null, 2));
+                } catch (error) {
+                    this.addMessage('system', '🔴 代理服务器连接失败', error.message);
+                }
+            }
+
+            async connect() {
+                const roomId = document.getElementById('roomInput').value;
+                const proxyUrl = document.getElementById('proxyInput').value;
+                
+                if (!roomId) {
+                    alert('请输入直播间号');
+                    return;
+                }
+
+                try {
+                    // Test proxy connection first
+                    const healthResponse = await fetch(`${proxyUrl}/health`);
+                    if (!healthResponse.ok) {
+                        throw new Error('代理服务器不可用');
+                    }
+
+                    // Try to get live room info
+                    const liveResponse = await fetch(`${proxyUrl}/dylive/${roomId}`);
+                    if (!liveResponse.ok) {
+                        throw new Error('无法获取直播间信息');
+                    }
+
+                    this.connected = true;
+                    this.startTime = Date.now();
+                    this.updateConnectionStatus('已连接');
+                    
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = false;
+                    
+                    this.addMessage('system', '🟢 连接成功', `已连接到直播间: ${roomId}`);
+                    
+                    // Start uptime counter
+                    this.uptimeInterval = setInterval(() => this.updateUptime(), 1000);
+                    
+                    // Simulate receiving messages for demo
+                    this.startMessageSimulation();
+                    
+                } catch (error) {
+                    this.addMessage('system', '🔴 连接失败', error.message);
+                }
+            }
+
+            disconnect() {
+                this.connected = false;
+                this.updateConnectionStatus('未连接');
+                
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                
+                if (this.uptimeInterval) {
+                    clearInterval(this.uptimeInterval);
+                    this.uptimeInterval = null;
+                }
+                
+                this.addMessage('system', '🔴 已断开连接', '连接已断开');
+            }
+
+            startMessageSimulation() {
+                // Simulate chat messages
+                const simulateChat = () => {
+                    if (!this.connected) return;
+                    
+                    const users = ['小明', '小红', '大佬123', '粉丝一号', '路人甲'];
+                    const messages = [
+                        '6666666',
+                        '主播太厉害了！',
+                        '这波操作可以',
+                        '关注了关注了',
+                        '刚进来，什么情况？',
+                        '哈哈哈哈哈',
+                        '支持支持！'
+                    ];
+                    
+                    const user = users[Math.floor(Math.random() * users.length)];
+                    const message = messages[Math.floor(Math.random() * messages.length)];
+                    
+                    this.addMessage('chat', '💬 聊天消息', `${user}: ${message}`);
+                    
+                    setTimeout(simulateChat, Math.random() * 3000 + 1000);
+                };
+
+                // Simulate gift messages
+                const simulateGift = () => {
+                    if (!this.connected) return;
+                    
+                    const users = ['土豪大佬', '神秘粉丝', '慷慨先生'];
+                    const gifts = ['玫瑰花', '跑车', '火箭', '城堡', '嘉年华'];
+                    
+                    const user = users[Math.floor(Math.random() * users.length)];
+                    const gift = gifts[Math.floor(Math.random() * gifts.length)];
+                    const count = Math.floor(Math.random() * 10) + 1;
+                    
+                    this.addMessage('gift', '🎁 礼物消息', `${user} 送出了 ${gift} x${count}`);
+                    
+                    setTimeout(simulateGift, Math.random() * 8000 + 5000);
+                };
+
+                // Simulate like messages
+                const simulateLike = () => {
+                    if (!this.connected) return;
+                    
+                    const count = Math.floor(Math.random() * 50) + 1;
+                    this.addMessage('like', '❤️ 点赞消息', `收到 ${count} 个赞`);
+                    
+                    setTimeout(simulateLike, Math.random() * 2000 + 500);
+                };
+
+                // Start simulations
+                setTimeout(simulateChat, 1000);
+                setTimeout(simulateGift, 3000);
+                setTimeout(simulateLike, 500);
+            }
+
+            addMessage(type, title, content) {
+                this.messageCount++;
+                document.getElementById('messageCount').textContent = this.messageCount;
+                
+                const messageContainer = document.getElementById('messageContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                
+                const time = new Date().toLocaleTimeString();
+                messageDiv.innerHTML = `
+                    <span class="message-time">${time}</span>
+                    <div class="message-content">
+                        <strong>${title}</strong><br>
+                        ${content}
+                    </div>
+                `;
+                
+                messageContainer.appendChild(messageDiv);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+                
+                // Keep only last 100 messages
+                while (messageContainer.children.length > 100) {
+                    messageContainer.removeChild(messageContainer.firstChild);
+                }
+            }
+
+            updateConnectionStatus(status) {
+                document.getElementById('connectionStatus').textContent = status;
+            }
+
+            updateUptime() {
+                if (!this.startTime) return;
+                
+                const elapsed = Date.now() - this.startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                
+                document.getElementById('uptime').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Initialize the test app
+        const dyCastTest = new DyCastTest();
+        
+        // Add some helpful info to console
+        console.log('🎮 DyCast Core Test Application');
+        console.log('📡 Proxy Server: http://localhost:3001');
+        console.log('🌐 Test Page: http://localhost:8080');
+        console.log('');
+        console.log('Available endpoints:');
+        console.log('  - Health: http://localhost:3001/health');
+        console.log('  - Live API: http://localhost:3001/dylive/[room_id]');
+        console.log('  - WebSocket: ws://localhost:3001/socket/...');
+    </script>
+</body>
+</html>
