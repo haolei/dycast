@@ -1,0 +1,52 @@
+{
+  "name": "@dycast/core",
+  "version": "1.0.0",
+  "description": "Core library for DyCast - Douyin live streaming message handling (Node.js & Browser compatible)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "douyin",
+    "live-streaming",
+    "websocket",
+    "dycast",
+    "barrage",
+    "chat"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/dycast-core.git"
+  },
+  "dependencies": {
+    "jsdom": "^27.0.0",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.3",
+    "tsup": "^8.0.0",
+    "typescript": "~5.8.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
