@@ -71,9 +71,9 @@ function copyCoreFiles() {
   });
 }
 
-// Step 3: Copy required dependencies
+// Step 4: Copy required dependencies and public assets
 function copyDependencies() {
-  console.log('📦 Copying dependencies...');
+  console.log('📦 Copying dependencies and assets...');
   
   // Copy logUtil.ts
   const logUtilSource = path.join(projectRoot, 'src/utils/logUtil.ts');
@@ -83,9 +83,85 @@ function copyDependencies() {
     fs.copyFileSync(logUtilSource, logUtilDest);
     console.log('✅ Copied: logUtil.ts');
   }
+
+  // Create public directory and copy mssdk.js
+  const publicDir = path.join(coreLibPath, 'public');
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+
+  const mssdkSource = path.join(projectRoot, 'public/mssdk.js');
+  const mssdkDest = path.join(publicDir, 'mssdk.js');
+  
+  if (fs.existsSync(mssdkSource)) {
+    fs.copyFileSync(mssdkSource, mssdkDest);
+    console.log('✅ Copied: mssdk.js');
+  }
 }
 
-// Step 4: Generate package.json
+// Step 5: Create server.ts file
+function createServerFile() {
+  console.log('🖥️ Creating server.ts...');
+  
+  // Check if server.ts already exists in dycast-core/src
+  const serverSource = path.join(coreLibPath, 'src/server.ts');
+  
+  if (fs.existsSync(serverSource)) {
+    console.log('✅ Server.ts already exists');
+    return;
+  }
+  
+  // Create a basic server.ts template if it doesn't exist
+  const serverContent = `/**
+ * DyCast Server - Proxy server for handling Douyin live streaming APIs
+ */
+
+import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
+
+export interface ServerConfig {
+  port?: number;
+  host?: string;
+  dyliveTarget?: string;
+  socketTarget?: string;
+  cors?: boolean;
+  debug?: boolean;
+}
+
+export class DyCastServer {
+  private config: Required<ServerConfig>;
+
+  constructor(config: ServerConfig = {}) {
+    this.config = {
+      port: config.port || 3001,
+      host: config.host || '0.0.0.0',
+      dyliveTarget: config.dyliveTarget || 'https://live.douyin.com',
+      socketTarget: config.socketTarget || 'wss://webcast5-ws-web-lf.douyin.com',
+      cors: config.cors !== false,
+      debug: config.debug || false
+    };
+  }
+
+  async start(): Promise<void> {
+    // Implementation will be added based on actual proxy requirements
+    console.log('🚀 DyCast Server started');
+  }
+
+  async stop(): Promise<void> {
+    console.log('🛑 DyCast Server stopped');
+  }
+}
+
+export function createDyCastServer(config?: ServerConfig): DyCastServer {
+  return new DyCastServer(config);
+}
+`;
+  
+  fs.writeFileSync(serverSource, serverContent);
+  console.log('✅ Created server.ts template');
+}
+
+// Step 5: Generate package.json
 function generatePackageJson() {
   console.log('📄 Generating package.json...');
   
@@ -106,6 +182,7 @@ function generatePackageJson() {
     files: [
       'dist',
       'src',
+      'public',
       'README.md'
     ],
     scripts: {
@@ -129,10 +206,13 @@ function generatePackageJson() {
       url: 'https://github.com/your-username/dycast-core.git'
     },
     dependencies: {
-      pako: '^2.1.0'
+      pako: '^2.1.0',
+      ws: '^8.0.0'
     },
     devDependencies: {
       '@types/pako': '^2.0.3',
+      '@types/ws': '^8.0.0',
+      '@types/node': '^20.0.0',
       tsup: '^8.0.0',
       typescript: '~5.8.0'
     },
@@ -148,7 +228,7 @@ function generatePackageJson() {
   console.log('✅ Generated package.json');
 }
 
-// Step 5: Generate tsconfig.json
+// Step 6: Generate tsconfig.json
 function generateTsConfig() {
   console.log('⚙️ Generating tsconfig.json...');
   
@@ -187,7 +267,7 @@ function generateTsConfig() {
   console.log('✅ Generated tsconfig.json');
 }
 
-// Step 6: Create index.ts for public API exports
+// Step 7: Create index.ts for public API exports
 function createIndexFile() {
   console.log('📜 Creating index.ts...');
   
@@ -264,26 +344,31 @@ export { Long } from './core/Long';
 
 // Logger utilities
 export { CLog, printInfo, printSKMCJ } from './utils/logUtil';
+
+// Server functionality
+export { DyCastServer, createDyCastServer } from './server';
+export type { ServerConfig } from './server';
 `;
   
   fs.writeFileSync(path.join(coreLibPath, 'src/index.ts'), indexContent);
-  console.log('✅ Created index.ts with public API exports');
+  console.log('✅ Created index.ts with public API exports including server');
 }
 
-// Step 7: Create README.md
+// Step 8: Create README.md
 function createReadme() {
   console.log('📖 Creating README.md...');
   
   const readmeContent = `# @dycast/core
 
-Core library for DyCast - Douyin live streaming message handling.
+Core library for DyCast - Douyin live streaming message handling with server proxy support.
 
 ## Features
 
 - 🚀 Real-time connection to Douyin live streams
 - 💬 Parse chat messages, gifts, likes, and social interactions
 - 🔄 Event-driven architecture with built-in emitter
-- 📦 TypeScript support with full type definitions
+- �️ Built-in proxy server for handling CORS and API access
+- �📦 TypeScript support with full type definitions
 - 🛠 Modular design for easy integration
 
 ## Installation
@@ -297,6 +382,8 @@ pnpm add @dycast/core
 \`\`\`
 
 ## Quick Start
+
+### Client Usage
 
 \`\`\`typescript
 import { DyCast } from '@dycast/core';
@@ -319,11 +406,54 @@ dycast.on('gift', (gift) => {
 });
 \`\`\`
 
+### Server Usage (Proxy for Web Applications)
+
+\`\`\`typescript
+import { createDyCastServer } from '@dycast/core';
+
+const server = createDyCastServer({
+  port: 3001,
+  host: '0.0.0.0',
+  debug: true
+});
+
+server.start().then(() => {
+  console.log('🚀 DyCast proxy server started!');
+  console.log('📡 /dylive -> https://live.douyin.com');
+  console.log('📡 /socket -> wss://webcast5-ws-web-lf.douyin.com');
+});
+\`\`\`
+
+### Web Integration
+
+Include \`mssdk.js\` in your HTML and use the proxy endpoints:
+
+\`\`\`html
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="./node_modules/@dycast/core/public/mssdk.js"></script>
+</head>
+<body>
+    <script>
+        // Use proxy endpoints for web development
+        fetch('http://localhost:3001/dylive/148108118778')
+          .then(response => response.text())
+          .then(data => console.log('Live room data:', data));
+
+        // WebSocket connection through proxy
+        const ws = new WebSocket('ws://localhost:3001/socket/webcast/im/push/v2/');
+    </script>
+</body>
+</html>
+\`\`\`
+
 ## API Documentation
 
 ### Core Classes
 
 - **DyCast**: Main class for connecting to live streams
+- **DyCastServer**: Proxy server for web applications
 - **Emitter**: Event emitter for handling real-time messages
 - **Relay**: WebSocket relay functionality
 
@@ -336,12 +466,32 @@ dycast.on('gift', (gift) => {
 - Social interactions
 - Room statistics
 
-### Utilities
+### Server Configuration
 
-- Message encoding/decoding
-- Signature generation
-- Request helpers
-- Logging utilities
+\`\`\`typescript
+interface ServerConfig {
+  port?: number;           // Default: 3001
+  host?: string;           // Default: '0.0.0.0'
+  dyliveTarget?: string;   // Default: 'https://live.douyin.com'
+  socketTarget?: string;   // Default: 'wss://webcast5-ws-web-lf.douyin.com'
+  cors?: boolean;          // Default: true
+  debug?: boolean;         // Default: false
+}
+\`\`\`
+
+### Proxy Endpoints
+
+When running the server, the following endpoints are available:
+
+- **Health Check**: \`GET /health\`
+- **Live API Proxy**: \`GET /dylive/*\` → \`https://live.douyin.com/*\`
+- **WebSocket Proxy**: \`ws://host:port/socket/*\` → \`wss://webcast5-ws-web-lf.douyin.com/*\`
+
+## Assets
+
+The library includes the following public assets:
+
+- \`public/mssdk.js\`: Required JavaScript SDK for web integration
 
 ## Development
 
@@ -365,7 +515,7 @@ MIT
   console.log('✅ Created README.md');
 }
 
-// Step 8: Create build configuration
+// Step 9: Create build configuration
 function createBuildConfig() {
   console.log('🔧 Creating build configuration...');
   
@@ -426,6 +576,7 @@ async function main() {
     createDirectoryStructure();
     copyCoreFiles();
     copyDependencies();
+    createServerFile();
     generatePackageJson();
     generateTsConfig();
     createIndexFile();

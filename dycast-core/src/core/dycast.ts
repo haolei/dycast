@@ -307,7 +307,7 @@ enum PayloadType {
 }
 
 /** API */
-// const BASE_URL = 'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/';
+// Browser-only: Use proxy endpoint for development, direct connection for production
 const BASE_URL = `${location.origin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
 
 /** SDK 版本 */

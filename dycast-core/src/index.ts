@@ -3,6 +3,8 @@
  * 
  * This library provides core functionality for connecting to Douyin live streams
  * and handling real-time messages including chat, gifts, likes, and more.
+ * 
+ * This is the browser-only build. For server functionality, use '@dycast/core/server'
  */
 
 // Core classes and types

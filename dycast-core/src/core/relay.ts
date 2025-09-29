@@ -1,11 +1,3 @@
-// Node.js compatibility
-import { setupNodeEnvironment } from '../utils/nodeCompat';
-
-// Setup Node.js environment if running in Node.js
-if (typeof window === 'undefined') {
-  setupNodeEnvironment();
-}
-
 import { Emitter, type EventMap } from './emitter';
 
 interface RelayCastEvent extends EventMap {
