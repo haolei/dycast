@@ -6,9 +6,9 @@
  * Generate signature for Douyin WebSocket connection using ByteDance acrawler
  * @param roomId - Room ID
  * @param uniqueId - Unique user ID
- * @returns Promise that resolves to generated signature string
+ * @returns generated signature string
  */
-export function getSignature(roomId: string, uniqueId: string): Promise<string>;
+export function getSignature(roomId: string, uniqueId: string): string;
 
 /**
  * Generate MS token for API requests

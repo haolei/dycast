@@ -64,7 +64,7 @@ export {
 } from './core/signature';
 
 // Relay functionality
-export { RelayCast as Relay } from './core/relay';
+export { RelayCast } from './core/relay';
 
 // Long integer utilities
 export { Long } from './core/Long';

@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
-  dts: true,
+  dts: false,
   clean: true,
   outDir: 'dist',
   outExtension({ format }) {
@@ -14,5 +14,6 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   target: 'es2020',
-  platform: 'node'
+  platform: 'node',
+  external: ['jsdom', 'ws', 'fs', 'path', 'vm', 'node-fetch']
 });

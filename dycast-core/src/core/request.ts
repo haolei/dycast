@@ -8,12 +8,7 @@ import { makeUrlParams, parseLiveHtml } from './util';
  */
 export const fetchLiveInfo = async function (id: string) {
   try {
-    const html = await fetch(`https://live.douyin.com/${id}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0',
-        'Referer': 'https://live.douyin.com/'
-      }
-    }).then(res => res.text());
+    const html = await fetch(`https://live.douyin.com/${id}`).then(res => res.text());
     return html;
   } catch (err) {
     return Promise.reject(Error('Fetch Live Info Error'));
@@ -44,9 +39,13 @@ export const getLiveInfo = async function (id: string) {
   }
 };
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-const BROWSER_VERSION = '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-const BROWSER_NAME = 'Mozilla';
+const USER_AGENT =
+  navigator.userAgent ||
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+const BROWSER_VERSION =
+  navigator.appVersion ||
+  '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+const BROWSER_NAME = navigator.appCodeName || 'Mozilla';
 const VERSION_CODE = 180800;
 
 /**
@@ -108,12 +107,11 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
       a_bogus: aBogus
     });
     const url = `https://live.douyin.com/webcast/im/fetch/?${makeUrlParams(params)}`;
-    const buffer = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0',
-        'Referer': 'https://live.douyin.com/'
-      }
-    }).then(res => res.arrayBuffer());
+    // 不清楚接口是否有 referer 验证，需要的话，得在服务器跨域配置处设置，这里配置无效
+    // const headers = {
+    //   Referer: `https://live.douyin.com/${roomNum}`
+    // };
+    const buffer = await fetch(url).then(res => res.arrayBuffer());
     return buffer;
   } catch (err) {
     return Promise.reject(Error('Fetch Im Info Error'));

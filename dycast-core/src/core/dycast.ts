@@ -265,7 +265,7 @@ interface DyCastOptions {
   endpoint?: string;
   heartbeatDuration?: string;
   host?: string;
-  identity?: string;
+  identity?: string
   im_path?: string;
   insert_task_id?: string;
   internal_ext: string;
@@ -308,7 +308,7 @@ enum PayloadType {
 
 /** API */
 // const BASE_URL = 'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/';
-const BASE_URL = 'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/';
+const BASE_URL = `${location.origin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
 
 /** SDK 版本 */
 const VERSION = '1.0.14-beta.0';
@@ -385,7 +385,7 @@ export class DyCast {
   // 即 如果 10000 ms 内都没接收到新消息，证明消息接收出错
   private downgradePingCount: number = 2;
 
-  private pingTimer: NodeJS.Timeout | undefined = void 0;
+  private pingTimer: number | undefined = void 0;
 
   // 上次接收时间
   private lastReceiveTime: number;
@@ -492,7 +492,7 @@ export class DyCast {
         return;
       }
       await this.fetchConnectInfo(this.roomNum);
-      const params = await this.getWssParam();
+      const params = this.getWssParam();
       if (this.isLiving()) {
         // 连接中
         this.wsRoomStatus = WSRoomStatus.CONNECTING;
@@ -689,7 +689,7 @@ export class DyCast {
       // 心跳：大概每 10 秒发送一次
       this.pingTimer = setTimeout(() => {
         this.state && this.ping();
-      }, dur);
+      }, dur) as unknown as number;
     } catch (err) {
       // 发送过程出错
       CLog.error('DyCast Ping Error =>', err);
@@ -1090,9 +1090,9 @@ export class DyCast {
   /**
    * 整理连接参数对象
    */
-  private async getWssParam(): Promise<DyCastOptions> {
+  private getWssParam(): DyCastOptions {
     const { roomId, uniqueId } = this.info;
-    const sign = await getSignature(roomId, uniqueId);
+    const sign = getSignature(roomId, uniqueId);
     return {
       room_id: roomId,
       user_unique_id: uniqueId,
