@@ -15,7 +15,8 @@
       "types": "./dist/server-only.d.ts",
       "import": "./dist/server-only.mjs",
       "require": "./dist/server-only.js"
-    }
+    },
+    "./mssdk.js": "./public/mssdk.js"
   },
   "files": [
     "dist",
@@ -61,6 +62,8 @@
     "@types/pako": "^2.0.3",
     "@types/ws": "^8.0.0",
     "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0",
+    "@types/http-proxy-middleware": "^2.0.0",
     "tsup": "^8.0.0",
     "typescript": "~5.8.0"
   },

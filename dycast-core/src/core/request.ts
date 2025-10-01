@@ -8,7 +8,7 @@ import { makeUrlParams, parseLiveHtml } from './util';
  */
 export const fetchLiveInfo = async function (id: string) {
   try {
-    const html = await fetch(`https://live.douyin.com/${id}`).then(res => res.text());
+    const html = await fetch(`/dylive/${id}`).then(res => res.text());
     return html;
   } catch (err) {
     return Promise.reject(Error('Fetch Live Info Error'));
@@ -106,7 +106,7 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
       live_pc: roomId,
       a_bogus: aBogus
     });
-    const url = `https://live.douyin.com/webcast/im/fetch/?${makeUrlParams(params)}`;
+    const url = `/dylive/webcast/im/fetch/?${makeUrlParams(params)}`;
     // 不清楚接口是否有 referer 验证，需要的话，得在服务器跨域配置处设置，这里配置无效
     // const headers = {
     //   Referer: `https://live.douyin.com/${roomNum}`

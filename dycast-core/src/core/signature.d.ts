@@ -1,18 +1,14 @@
 /**
- * Signature utilities for Douyin live stream authentication
+ * 获取链接签名
+ * @param roomId - 房间ID
+ * @param uniqueId - 用户唯一ID
+ * @returns signature string
  */
+export declare function getSignature(roomId: string, uniqueId: string): string;
 
 /**
- * Generate signature for Douyin WebSocket connection using ByteDance acrawler
- * @param roomId - Room ID
- * @param uniqueId - Unique user ID
- * @returns generated signature string
+ * 获取一个 msToken
+ * @param length - token长度，默认182
+ * @returns msToken string
  */
-export function getSignature(roomId: string, uniqueId: string): string;
-
-/**
- * Generate MS token for API requests
- * @param length - Token length (default: 182)
- * @returns Generated MS token string
- */
-export function getMsToken(length?: number): string;
+export declare function getMsToken(length?: number): string;

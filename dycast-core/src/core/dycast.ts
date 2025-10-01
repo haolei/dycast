@@ -1,6 +1,13 @@
 import { CLog } from '../utils/logUtil';
 import { Emitter, type EventMap } from './emitter';
 import pako from 'pako';
+
+// Stub for missing logUserCast import from root project
+const logUserCast = (message: string, data?: any) => {
+  if (typeof console !== 'undefined' && console.log) {
+    console.log(`[DyCast] ${message}`, data || '');
+  }
+};
 import {
   decodeChatMessage,
   decodeControlMessage,
@@ -308,6 +315,8 @@ enum PayloadType {
 
 /** API */
 // Browser-only: Use proxy endpoint for development, direct connection for production
+// For test project, use custom proxy server on port 3001
+// const BASE_URL = 'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/';
 const BASE_URL = `${location.origin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
 
 /** SDK 版本 */

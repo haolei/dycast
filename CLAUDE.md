@@ -69,25 +69,72 @@ pnpm run type-check
 ### Core Library
 
 ```bash
-# Package core library
+# Package core library (copies src/core/ to dycast-core/)
 node scripts/package-core.js
 
 # Install core library dependencies
 cd dycast-core && npm install
 
-# Build core library
-cd dycast-core && npm run build
+# Build core library (ESM + CJS + types)
+cd dycast-core && npm run build:all
+
+# Build with watch mode
+cd dycast-core && npm run build:watch
 
 # Type checking
 cd dycast-core && npm run type-check
+
+# Prepare for publishing
+cd dycast-core && npm run prepublishOnly
 ```
 
-## Proxy Configuration
+### Test Project
 
-The application uses Vite's proxy feature to handle CORS:
+```bash
+# Navigate to test project
+cd test-project
 
-1. `/dylive` - Proxies requests to `https://live.douyin.com`
-2. `/socket` - Proxies WebSocket connections to Douyin's WebSocket servers
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm run dev
+
+# Run proxy server (for testing core library)
+pnpm run proxy
+```
+
+## Project Architecture
+
+### Dual-Project Structure
+
+The codebase consists of three main components:
+
+1. **Main Application** (`/`): Vue 3 frontend application
+2. **Core Library** (`/dycast-core/`): Standalone NPM package (`@dycast/core`)
+3. **Test Project** (`/test-project/`): Integration testing environment
+
+### Core Library Features
+
+- **Browser & Server Support**: Built for both browser and Node.js environments
+- **Proxy Server**: Built-in `DyCastServer` class for handling CORS and API routing
+- **Multiple Entry Points**:
+  - `@dycast/core` - Main browser library
+  - `@dycast/core/server` - Server-only functionality
+  - `@dycast/core/mssdk.js` - Microsoft SDK for signature generation
+
+### Proxy Configuration
+
+The application uses multiple proxy layers:
+
+1. **Vite Development Proxy** (main app):
+   - `/dylive` → `https://live.douyin.com`
+   - `/socket` → Douyin WebSocket servers
+
+2. **Standalone Proxy Server** (core library):
+   - `DyCastServer` class provides proxy endpoints without Vite
+   - Configurable ports and targets
+   - Mobile User-Agent handling
 
 This allows the application to bypass browser security restrictions when connecting to Douyin's services.
 
@@ -95,10 +142,12 @@ This allows the application to bypass browser security restrictions when connect
 
 1. **Protocol Buffers**: Uses protobuf to decode binary WebSocket messages from Douyin
 2. **Gzip Compression**: Handles compressed message payloads using the `pako` library
-3. **Signature Generation**: Implements JavaScript-based signature generation for Douyin's WebSocket URLs
+3. **Signature Generation**: Implements JavaScript-based signature generation for Douyin's WebSocket URLs using `mssdk.js`
 4. **Message Parsing**: Converts raw protobuf messages to structured TypeScript objects
 5. **Reconnection Logic**: Automatic reconnection with exponential backoff
 6. **Heartbeat Monitoring**: Detects connection issues through periodic heartbeat checks
+7. **Event-Driven Architecture**: Uses custom `Emitter` class for real-time message handling
+8. **Message Relay**: `RelayCast` class for forwarding messages to external WebSocket endpoints
 
 ## Data Flow
 

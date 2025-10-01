@@ -1,26 +1,22 @@
 {
-  "name": "dycast-test-project",
-  "version": "1.0.0",
-  "description": "Test project for DyCast Core library",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "serve": "http-server public -p 8080 -o"
-  },
-  "dependencies": {
-    "@dycast/core": "file:../dycast-core",
-    "http-server": "^14.1.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0"
-  },
-  "keywords": [
-    "dycast",
-    "douyin",
-    "live-streaming",
-    "test"
-  ],
-  "author": "DyCast Team",
-  "license": "MIT"
+	"name": "dycast-test-project",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"proxy": "node ./proxy-server.js",
+		"dev:direct": "vite --config vite.config.direct.js",
+		"dev:proxy": "vite --config vite.config.js"
+	},
+	"dependencies": {
+		"@dycast/core": "file:../dycast-core",
+		"ws": "^8.18.3"
+	},
+	"devDependencies": {
+		"typescript": "~5.8.0",
+		"vite": "^6.2.4"
+	}
 }

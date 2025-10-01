@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DyCast Core Test Harness</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <script src="/mssdk.js"></script>
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel">
+        <h1>DyCast WebSocket Tester</h1>
+        <form id="connect-form" autocomplete="off">
+          <label class="field">
+            <span>Douyin Room Number</span>
+            <input id="room-input" name="room" placeholder="e.g. 123456789" required />
+          </label>
+          <div class="buttons">
+            <button type="submit" class="primary" id="connect-btn">Connect</button>
+            <button type="button" id="disconnect-btn">Disconnect</button>
+            <button type="button" id="clear-log-btn">Clear log</button>
+          </div>
+        </form>
+        <div class="status" aria-live="polite">
+          <strong>Status:</strong>
+          <span id="status-text">Idle</span>
+        </div>
+        <div class="info" id="room-info"></div>
+      </section>
+      <section class="panel">
+        <header class="panel-header">
+          <h2>Message log</h2>
+          <label class="toggle">
+            <input type="checkbox" id="auto-scroll" checked />
+            <span>Auto-scroll</span>
+          </label>
+        </header>
+        <pre id="log" class="log" tabindex="0"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

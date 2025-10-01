@@ -1,9 +1,11 @@
 /**
  * DyCast Server - Proxy server for handling Douyin live streaming APIs
- * 
+ *
  * This server provides proxy functionality for:
  * - /dylive: Douyin live API proxy
  * - /socket: WebSocket proxy for real-time messaging
+ *
+ * Uses Node.js native modules for robust proxy handling
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
@@ -52,6 +54,19 @@ export class DyCastServer {
     }
   }
 
+  private getDesktopUserAgent(userAgent?: string): string {
+    if (!userAgent) {
+      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0';
+    }
+
+    const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
+    if (isMobile) {
+      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0';
+    }
+
+    return userAgent;
+  }
+
   private proxyRequest(req: IncomingMessage, res: ServerResponse, targetUrl: string) {
     const url = new URL(targetUrl + (req.url?.replace(/^\/dylive/, '') || ''));
     const isHttps = url.protocol === 'https:';
@@ -70,7 +85,7 @@ export class DyCastServer {
       }
     };
 
-    this.log('Proxying request:', req.method, url.toString());
+    this.log('Proxying HTTP request:', req.method, url.toString());
 
     const proxyReq = requestModule(options, (proxyRes) => {
       // Handle set-cookie headers
@@ -84,16 +99,28 @@ export class DyCastServer {
         proxyRes.headers['set-cookie'] = newCookies;
       }
 
-      this.setupCORS(res);
+      // Set up CORS headers before writing response headers
+      if (this.config.cors) {
+        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+        proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, User-Agent, Referer';
+        proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+      }
+
       res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
       proxyRes.pipe(res);
-      
+
       this.log('Proxy response:', proxyRes.statusCode);
     });
 
     proxyReq.on('error', (error) => {
       console.error('Proxy request error:', error);
-      this.setupCORS(res);
+      if (this.config.cors) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, User-Agent, Referer');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Proxy error', message: error.message }));
     });
@@ -101,40 +128,65 @@ export class DyCastServer {
     req.pipe(proxyReq);
   }
 
-  private getDesktopUserAgent(userAgent?: string): string {
-    if (!userAgent) {
-      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0';
-    }
-
-    const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
-    if (isMobile) {
-      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0';
-    }
-
-    return userAgent;
-  }
-
   private setupWebSocketProxy() {
     this.wss = new WebSocketServer({ noServer: true });
 
     this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
       this.log('WebSocket connection established');
+      this.log('Client WebSocket headers:', req.headers);
 
       // Create connection to target WebSocket server
-      const targetUrl = this.config.socketTarget + (req.url?.replace(/^\/socket/, '') || '');
+      // Preserve the full path and query parameters from the original request
+      // The client sends: /socket/webcast/im/push/v2/?params...
+      // We need to map this to: /webcast/im/push/v2/?params...
+      const originalPath = req.url?.replace(/^\/socket/, '') || '';
+      const targetUrl = this.config.socketTarget + originalPath;
+
+      this.log('Original request URL:', req.url);
+      this.log('Original path after replacement:', originalPath);
+      this.log('Target WebSocket URL:', targetUrl);
+
+      // Enhanced headers for WebSocket connection - preserve all authentication headers
+      // Remove conflicting headers from original request before merging
+      const { origin, referer, ...filteredHeaders } = req.headers;
+      const enhancedHeaders = {
+        ...filteredHeaders,
+        'User-Agent': this.getDesktopUserAgent(req.headers['user-agent'] as string),
+        'Origin': 'https://live.douyin.com',
+        'Referer': 'https://live.douyin.com/',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
+        'Sec-WebSocket-Version': '13'
+      };
+
+      // Ensure cookies are preserved for authentication
+      if (req.headers.cookie) {
+        enhancedHeaders['cookie'] = req.headers.cookie;
+      }
+
+      this.log('WebSocket connection headers:', enhancedHeaders);
+
       const targetWs = new WebSocket(targetUrl, {
-        headers: {
-          'User-Agent': this.getDesktopUserAgent(req.headers['user-agent'] as string),
-          'Origin': 'https://live.douyin.com',
-          ...req.headers
-        }
+        headers: enhancedHeaders,
+        perMessageDeflate: false
+      });
+
+      // Enhanced logging for WebSocket lifecycle
+      targetWs.on('open', () => {
+        this.log('✅ Connected to target WebSocket server');
       });
 
       // Forward messages from client to target
       ws.on('message', (data) => {
         if (targetWs.readyState === WebSocket.OPEN) {
           targetWs.send(data);
-          this.log('Message sent to target WebSocket');
+          this.log('📤 Message sent to target WebSocket');
+        } else {
+          this.log('⚠️  Cannot send message - target WebSocket not open, state:', targetWs.readyState);
         }
       });
 
@@ -142,34 +194,43 @@ export class DyCastServer {
       targetWs.on('message', (data) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(data);
-          this.log('Message received from target WebSocket');
+          this.log('📥 Message received from target WebSocket');
+        } else {
+          this.log('⚠️  Cannot forward message - client WebSocket not open, state:', ws.readyState);
         }
       });
 
-      // Handle connections
-      targetWs.on('open', () => {
-        this.log('Connected to target WebSocket server');
-      });
-
-      // Handle errors
+      // Handle errors with detailed logging
       targetWs.on('error', (error) => {
-        console.error('Target WebSocket error:', error);
-        ws.close();
+        console.error('❌ Target WebSocket error:', error);
+        this.log('❌ Target WebSocket error details:', {
+          message: error.message,
+          stack: error.stack,
+          targetUrl: targetUrl,
+          headers: enhancedHeaders
+        });
+        ws.close(1011, 'Target WebSocket error');
       });
 
       ws.on('error', (error) => {
-        console.error('Client WebSocket error:', error);
+        console.error('❌ Client WebSocket error:', error);
         targetWs.close();
       });
 
       // Handle disconnections
-      ws.on('close', () => {
-        this.log('Client WebSocket disconnected');
+      ws.on('close', (code, reason) => {
+        this.log('🔌 Client WebSocket disconnected:', { code, reason: reason.toString() });
         targetWs.close();
       });
 
-      targetWs.on('close', () => {
-        this.log('Target WebSocket disconnected');
+      targetWs.on('close', (code, reason) => {
+        this.log('🔌 Target WebSocket disconnected:', { code, reason: reason.toString() });
+        this.log('Target WebSocket close details:', {
+          code,
+          reason: reason.toString(),
+          targetUrl,
+          timestamp: new Date().toISOString()
+        });
         ws.close();
       });
     });
@@ -182,7 +243,7 @@ export class DyCastServer {
 
         this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
           const url = new URL(req.url || '', `http://${req.headers.host}`);
-          
+
           // Handle CORS preflight requests
           if (req.method === 'OPTIONS') {
             this.setupCORS(res);
@@ -201,8 +262,8 @@ export class DyCastServer {
           if (url.pathname === '/health') {
             this.setupCORS(res);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ 
-              status: 'ok', 
+            res.end(JSON.stringify({
+              status: 'ok',
               timestamp: new Date().toISOString(),
               config: {
                 port: this.config.port,
@@ -223,7 +284,7 @@ export class DyCastServer {
         // Handle WebSocket upgrade
         this.server.on('upgrade', (request: IncomingMessage, socket: any, head: Buffer) => {
           const url = new URL(request.url || '', `http://${request.headers.host}`);
-          
+
           if (url.pathname.startsWith('/socket')) {
             this.wss?.handleUpgrade(request, socket, head, (ws) => {
               this.wss?.emit('connection', ws, request);
@@ -285,7 +346,7 @@ export function createDyCastServer(config?: ServerConfig): DyCastServer {
 }
 
 // CLI support
-if (require.main === module) {
+if (process.argv[1] && (process.argv[1].endsWith('server.js') || process.argv[1]?.endsWith('server.mjs'))) {
   const server = new DyCastServer({
     port: parseInt(process.env.PORT || '3001'),
     host: process.env.HOST || '0.0.0.0',
